@@ -50,8 +50,7 @@ static int onebyte_init(void)
 {
      int result;
      // register the device
-     result = register_chrdev(MAJOR_NUMBER, "onebyte",
-&onebyte_fops);
+     result = register_chrdev(MAJOR_NUMBER, "onebyte", &onebyte_fops);
      if (result < 0) {
           return result;
      }
@@ -63,8 +62,7 @@ static int onebyte_init(void)
      if (!onebyte_data) {
           onebyte_exit();
           // cannot allocate memory
-          // return no memory error, negative signify a
-     failure
+          // return no memory error, negative signify a failure
           return -ENOMEM;
      }
      // initialize the value to be X
