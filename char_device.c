@@ -6,7 +6,10 @@
 #include <linux/types.h>
 #include <linux/fs.h>
 #include <linux/proc_fs.h>
-#include <linux/uaccess.h>
+#include <linux/sched.h>
+#include <asm/uaccess.h>
+
+
 
 #define MAJOR_NUMBER 61
 
@@ -37,21 +40,20 @@ int onebyte_release(struct inode *inode, struct file *filep)
 }
 
  ssize_t onebyte_read(struct file *filep, char *buf, size_t count, loff_t *f_pos)
-{
-    *buf = *onebyte_data;
-    return sizeof(onebyte_data);
+{   
+	return simple_read_from_buffer(buf, count, f_pos, onebyte_data, 1);
 }
 
 ssize_t onebyte_write(struct file *filep, const char *buf, size_t count, loff_t *f_pos)
 {
-    if (sizeof(buf)> sizeof(char)){
+   void* temp=NULL;
+	if (sizeof(buf)> sizeof(char)){
         printk("write error: no space for device");
-        *onebyte_data=buf[0];
-    } else
-    {
-        *onebyte_data=*buf;
-    }
-    return sizeof(onebyte_data);
+        temp=&onebyte_data[0];
+    } else {
+	temp=(onebyte_data);
+	}
+     return simple_write_to_buffer(onebyte_data,sizeof(onebyte_data),f_pos,buf,count);
 }
 
 static int onebyte_init(void)
