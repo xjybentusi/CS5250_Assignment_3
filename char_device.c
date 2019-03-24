@@ -38,12 +38,20 @@ int onebyte_release(struct inode *inode, struct file *filep)
 
  ssize_t onebyte_read(struct file *filep, char *buf, size_t count, loff_t *f_pos)
 {
-     /*please complete the function on your own*/
+    *buf = *onebyte_data;
+    return sizeof(onebyte_data);
 }
 
 ssize_t onebyte_write(struct file *filep, const char *buf, size_t count, loff_t *f_pos)
 {
-     /*please complete the function on your own*/
+    if (sizeof(buf)> sizeof(char)){
+        printk("write error: no space for device");
+        *onebyte_data=buf[0];
+    } else
+    {
+        *onebyte_data=*buf;
+    }
+    return sizeof(onebyte_data);
 }
 
 static int onebyte_init(void)
