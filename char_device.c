@@ -7,7 +7,7 @@
 #include <linux/fs.h>
 #include <linux/proc_fs.h>
 #include <linux/sched.h>
-#include <asm/uaccess.h>
+#include <linux/uaccess.h>
 
 
 
@@ -19,6 +19,7 @@ int onebyte_release(struct inode *inode, struct file *filep);
 ssize_t onebyte_read(struct file *filep, char *buf, size_t count, loff_t *f_pos);
 ssize_t onebyte_write(struct file *filep, const char *buf, size_t count, loff_t *f_pos);
 static void onebyte_exit(void);
+static short  size_of_message;
 
 /* definition of file_operation structure */
 struct file_operations onebyte_fops = {
@@ -43,10 +44,18 @@ int onebyte_release(struct inode *inode, struct file *filep)
 {   
 /*char temp[1];
 char val=(char)(*onebyte_data);
-int wrinten = snprintf(temp, 1, "%s", val);*/
+int wrinten = snprintf(temp, 1, "%s", val);
+	int error_count = copy_to_user(buf, onebyte_data, size_of_message);
+	if (error_count==0){            
+      printk(KERN_INFO "one: Sent %d characters to the user\n", size_of_message);
+      return (size_of_message=0);  // clear the position to the start and return 0
+   }
+   else {
+      printk(KERN_INFO "one: Failed to send %d characters to the user\n", error_count);
+      return -EFAULT;              
+   }*/
 	return simple_read_from_buffer(buf, count, f_pos, onebyte_data, 1);
 }
-
 ssize_t onebyte_write(struct file *filep, const char *buf, size_t count, loff_t *f_pos)
 {
    /*void* temp=NULL;
@@ -60,8 +69,10 @@ ssize_t onebyte_write(struct file *filep, const char *buf, size_t count, loff_t 
 		printk("write error: no space for device!");
 		count=sizeof(char);
 	}*/
-     return simple_write_to_buffer(onebyte_data,1,f_pos,buf,count);
-	
+	sprintf(onebyte_data, "%s", buf);   // appending received string with its length
+   size_of_message = strlen(onebyte_data);               // store the length of the stored message
+   printk(KERN_INFO "one: Received %zu characters from the user\n", count);
+   return count;
 }
 
 static int onebyte_init(void)
@@ -76,7 +87,7 @@ static int onebyte_init(void)
      // kmalloc is just like malloc, the second parameter is
      // the type of memory to be allocated.
      // To release the memory allocated by kmalloc, use kfree.
-     onebyte_data = kmalloc(sizeof(char), GFP_KERNEL);
+     onebyte_data = (char *)kmalloc(sizeof(char), GFP_KERNEL);
      if (!onebyte_data) {
           onebyte_exit();
           // cannot allocate memory
@@ -85,6 +96,7 @@ static int onebyte_init(void)
      }
      // initialize the value to be X
      *onebyte_data = 'X';
+size_of_message=strlen(onebyte_data);
      printk(KERN_ALERT "This is a onebyte device module\n");
      return 0;
 }
