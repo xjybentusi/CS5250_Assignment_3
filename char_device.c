@@ -43,23 +43,15 @@ ssize_t onebyte_read(struct file *filep, char *buf, size_t count, loff_t *f_pos)
 	return simple_read_from_buffer(buf, count, f_pos, onebyte_data, 1);
 }
 
-void print_string(char *string)
-{
-     struct tty_struct *tty;
-     tty = get_current_tty();
-
-     if (tty != NULL) {
-          (tty->driver->ops->write) (tty, string, strlen(string));   
-     }    
-}
-
 ssize_t onebyte_write(struct file *filep, const char *buf, size_t count, loff_t *f_pos)
 {
-     if (count>1){
-	     print_string("bash: printf: write error: No space left on device!");
-     }
-     sprintf(onebyte_data, "%s", buf); 
-     return count;
+	sprintf(onebyte_data, buf); 
+	if (count>1){
+		printk(KERN_ALERT "No space left on device\n");
+        	count = 0;
+        return -ENOSPC;
+     	} else
+		return 1;
 }
 
 static int onebyte_init(void)
